@@ -1,0 +1,12 @@
+{
+  "name": "com.dtt.bim",
+  "displayName": "DTT Bim",
+  "version": "0.0.1",
+  "unity": "2021.3",
+  "description": "DTT Bim Code",
+  "author": {
+    "name": "Digital Twin Technology",
+    "email": "https://www.digitaltwin.technology/",
+    "url": "https://www.digitaltwin.technology/"
+  }
+}
