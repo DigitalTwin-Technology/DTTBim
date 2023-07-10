@@ -4,16 +4,26 @@
 using UnityEngine;
 using DTTUnityCore.Functional;
 using DTTUnityCore.DataStructs;
+using DTTUnityCore;
+using System;
 
 namespace DTTBim.DataStructs
 {
-    public class BimNodeParent : DataNodeBase, IBimParentNode<DataNodeBase>
+    [Serializable]
+    public class BimNodeParent : DataNodeBase, IBimParentNode<DataNodeBase, BimNodeObject>
     {
+        [SerializeField]
         private MetaDataName _metaDataName;
 
         public BimNodeParent(string name)
         {
             _metaDataName = new MetaDataName(name);
+        }
+
+        public BimNodeObject this[int index] 
+        { 
+            get => (BimNodeObject)Childs[index]; 
+            set => Childs[index] = value; 
         }
 
         public IMetaData MetaData { get => _metaDataName; set => _metaDataName = (MetaDataName)value; }
@@ -39,23 +49,40 @@ namespace DTTBim.DataStructs
             }
         }
 
-        public void AddMesh(string id, Mesh mesh, Material[] sharedMaterials, bool addMeshCollider = false)
+        public void AddMesh(string id, Mesh sharedMesh, Material[] sharedMaterialsArrays, Option<ICombineRendererBuilder> combineRendererBuilder, bool addMeshCollider = false)
         {
-            BimNodeObject bimNodeObject = FindNodeObjectById<BimNodeObject>(id);
+            GuardsClauses.ArgumentStringNullOrEmpty(id, nameof(id));
+            GuardsClauses.ArgumentNotNull(sharedMesh, nameof(sharedMesh));
+            GuardsClauses.ArgumentNotNull(sharedMaterialsArrays, nameof(sharedMaterialsArrays));
 
+            BimNodeObject bimNodeObject = FindNodeObjectById<BimNodeObject>(id);
             if(bimNodeObject)
             {
-                MeshFilter meshFilter = bimNodeObject.AddComponent<MeshFilter>();
-                meshFilter.sharedMesh = mesh;
+                //TODO: Resolve a empty sharedMaterialArray with a existing mesh
 
-                MeshRenderer meshRenderer = bimNodeObject.AddComponent<MeshRenderer>();
-                meshRenderer.materials = sharedMaterials;
+                MeshFilter meshFilter = bimNodeObject.AddComponent<MeshFilter>();
+                meshFilter.sharedMesh = sharedMesh;
 
                 if (addMeshCollider)
                 {
                     MeshCollider meshCollider = bimNodeObject.AddComponent<MeshCollider>();
-                    meshCollider.sharedMesh = mesh;
+                    meshCollider.sharedMesh = sharedMesh;
                 }
+
+                _ = combineRendererBuilder.Match(some =>
+                {
+                    for(int i=0; i< sharedMaterialsArrays.Length; i++)
+                    {
+                        some.AddCombineInstance(sharedMaterialsArrays[i], sharedMesh, bimNodeObject.transform.localToWorldMatrix);
+                    }
+                    return 0;
+                },
+                () =>
+                {
+                    MeshRenderer meshRenderer = bimNodeObject.AddComponent<MeshRenderer>();
+                    meshRenderer.materials = sharedMaterialsArrays;
+                    return 0;
+                });
             }
         }
 

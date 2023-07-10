@@ -3,6 +3,8 @@
 
 using UnityEngine;
 using DTTUnityCore.DataStructs;
+using DTTUnityCore;
+using DTTUnityCore.Functional;
 
 namespace DTTBim.DataStructs
 {
@@ -11,10 +13,16 @@ namespace DTTBim.DataStructs
         private int _initialCapacity;
         private MetaDataName _metaDataName;
 
-        public BimNodeSceneBuilder(string name, int initalCapacity = 0)
+        IDataNodeBuilder _bimParentNodeBuilder;
+
+        public BimNodeSceneBuilder(string name, IDataNodeBuilder bimParentNodeBuilder, int initalCapacity = 0)
         {
+            GuardsClauses.ArgumentStringNullOrEmpty(name, "name");
+            GuardsClauses.ArgumentNotNull(bimParentNodeBuilder, "dataNodeBuilder");
+
             _metaDataName = new MetaDataName(name);
             _initialCapacity = initalCapacity;
+            _bimParentNodeBuilder = bimParentNodeBuilder;
         }
 
         public IMetaData MetaData { get => _metaDataName; set => _metaDataName = (MetaDataName)value; }
@@ -28,6 +36,8 @@ namespace DTTBim.DataStructs
                 bimNodeScene.Childs.Capacity = _initialCapacity;
                 bimNodeScene.Childs.TrimExcess();
             }
+
+            bimNodeScene.AddBimParentNode(_bimParentNodeBuilder);
 
             return (IMetaDataNode<NodeType, MetaDataType>)bimNodeScene;
         }

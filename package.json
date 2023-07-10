@@ -1,12 +1,19 @@
 {
   "name": "com.dtt.bim",
   "displayName": "DTT Bim",
-  "version": "0.1.1",
+  "version": "0.2.1",
   "unity": "2021.3",
+  "description": "Digital Twin Technology BIM code library and tools",
   "description": "DTT Bim Code",
   "author": {
     "name": "Digital Twin Technology",
     "email": "https://www.digitaltwin.technology/",
     "url": "https://www.digitaltwin.technology/"
   }
+  "dependencies": {
+    "com.dtt.core": "0.9.5"
+ }
+ "upm": {
+    "changelog": " #### Changed\n\n* Update BimNodeParent, BimNodeScene and BimNodeSceneBuilde \n\n* Update Package.json "
+  },
 }
