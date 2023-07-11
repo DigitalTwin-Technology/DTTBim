@@ -9,11 +9,16 @@ namespace DTTBim.DataStructs
 {
     public class BimNodeObject : DataNodeBase, IBimNodeObject<DataNodeBase>
     {
-        [SerializeField] private MetaDataBimNode _metaDataName;
 
-        public void AddBimDataNode(uint nodeIndex, string id, Vector3 position, Quaternion rotation, Vector3 scale, int layer = 0)
+        public void SetNodeId(string nodeId)
         {
-            AddNode(new BimNodeObjectBuilder(nodeIndex, id, null, position, rotation, scale, layer), Option<DataNodeBase>.None);
+            ((MetaDataBimNode)Data).Id = nodeId;
+            name = nodeId;
+        }
+
+        public DataNodeBase AddBimDataNode(string nodeId, uint nodeIndex,Vector3 position, Quaternion rotation, Vector3 scale, int layer = 0)
+        {
+            return (DataNodeBase)AddNode(new BimNodeObjectBuilder(nodeId, nodeIndex, null, position, rotation, scale, layer), Option<DataNodeBase>.None);
         }
     }
 }

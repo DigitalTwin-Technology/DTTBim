@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ```
 ## [Unreleased]
 
-## [0.1.1] - 10.07.2023.
+## [0.3.1] - 11.07.2023.
+### Added
+1. Add first version of gltFastImporter implementation
+2. Add "com.atteneder.gltfast" : "5.0.4" reference
+
+## [0.2.1] - 10.07.2023.
 ### Changed
 1. Update BimNodeParent, BimNodeScene and BimNodeSceneBuilder  
 2. Update Package.json  

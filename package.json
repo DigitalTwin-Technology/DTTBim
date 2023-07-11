@@ -1,7 +1,7 @@
 {
   "name": "com.dtt.bim",
   "displayName": "DTT Bim",
-  "version": "0.2.1",
+  "version": "0.3.1",
   "unity": "2021.3",
   "description": "Digital Twin Technology BIM code library and tools",
   "description": "DTT Bim Code",
@@ -12,8 +12,9 @@
   }
   "dependencies": {
     "com.dtt.core": "0.9.5"
+	"com.atteneder.gltfast" : "5.0.4"
  }
  "upm": {
-    "changelog": " #### Changed\n\n* Update BimNodeParent, BimNodeScene and BimNodeSceneBuilde \n\n* Update Package.json "
+    "changelog": " ### Added Add first version of gltFastImporter implementation \n\n* Add "com.atteneder.gltfast" : "5.0.4" reference"
   },
 }

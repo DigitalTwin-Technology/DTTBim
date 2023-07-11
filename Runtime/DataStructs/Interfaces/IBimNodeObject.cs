@@ -8,7 +8,9 @@ namespace DTTBim.DataStructs
 {
     public interface IBimNodeObject<NodeType> : IMetaDataNode<NodeType, IMetaData>
     {
-        void AddBimDataNode(uint nodeIndex, string id, Vector3 position, Quaternion rotation, Vector3 scale, int layer);
+        void SetNodeId(string nodeId);
+
+        NodeType AddBimDataNode(string nodeId, uint nodeIndex, Vector3 position, Quaternion rotation, Vector3 scale, int layer);
     }
 }
 

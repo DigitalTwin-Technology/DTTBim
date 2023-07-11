@@ -17,9 +17,9 @@ namespace DTTBim.DataStructs
 
         public IMetaData MetaData { get => _metaDataBimNode; set => _metaDataBimNode = (MetaDataBimNode)value; }
 
-        public BimNodeObjectBuilder(uint nodeIndex, string name, uint? parentIndex, Vector3 position, Quaternion rotation, Vector3 scale, int layer )
+        public BimNodeObjectBuilder(string nodeId, uint nodeIndex, uint? parentIndex, Vector3 position, Quaternion rotation, Vector3 scale, int layer )
         {
-            _metaDataBimNode = new MetaDataBimNode(nodeIndex, name);
+            _metaDataBimNode = new MetaDataBimNode(nodeIndex, nodeId);
 
             _position = position;
             _rotation = rotation;   
@@ -32,8 +32,10 @@ namespace DTTBim.DataStructs
             BimNodeObject newBimNodeObject = (new GameObject(_metaDataBimNode.Id)).AddComponent<BimNodeObject>();
             newBimNodeObject.Id = _metaDataBimNode.Id;
             newBimNodeObject.Data = _metaDataBimNode;
-            newBimNodeObject.transform.parent = ((DataNodeBase)parent.Node).transform;
-            
+
+            newBimNodeObject.Header = ((DataNodeBase)parent.Node).Header;
+            newBimNodeObject.Parent = ((DataNodeBase)parent.Node);
+
             newBimNodeObject.transform.localScale = _scale;
             newBimNodeObject.transform.localPosition = _position;
             newBimNodeObject.transform.localRotation = _rotation;

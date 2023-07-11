@@ -15,12 +15,12 @@ namespace DTTBim.DataStructs
 
         IDataNodeBuilder _bimParentNodeBuilder;
 
-        public BimNodeSceneBuilder(string name, IDataNodeBuilder bimParentNodeBuilder, int initalCapacity = 0)
+        public BimNodeSceneBuilder(string sceneName, IDataNodeBuilder bimParentNodeBuilder, int initalCapacity = 0)
         {
-            GuardsClauses.ArgumentStringNullOrEmpty(name, "name");
+            GuardsClauses.ArgumentStringNullOrEmpty(sceneName, "name");
             GuardsClauses.ArgumentNotNull(bimParentNodeBuilder, "dataNodeBuilder");
 
-            _metaDataName = new MetaDataName(name);
+            _metaDataName = new MetaDataName(sceneName);
             _initialCapacity = initalCapacity;
             _bimParentNodeBuilder = bimParentNodeBuilder;
         }
@@ -30,8 +30,10 @@ namespace DTTBim.DataStructs
         public IMetaDataNode<NodeType, MetaDataType> Create<NodeType, MetaDataType>(IMetaDataNode<NodeType, MetaDataType> parent) where MetaDataType : IMetaData
         {
             BimNodeScene bimNodeScene = new GameObject(_metaDataName.Name).AddComponent<BimNodeScene>();
+            bimNodeScene.Header = parent.Header as DataNodeBase;
+            bimNodeScene.Parent = (DataNodeBase)parent;
 
-            if(_initialCapacity != 0)
+            if (_initialCapacity != 0)
             {
                 bimNodeScene.Childs.Capacity = _initialCapacity;
                 bimNodeScene.Childs.TrimExcess();

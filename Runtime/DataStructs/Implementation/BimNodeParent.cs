@@ -6,46 +6,101 @@ using DTTUnityCore.Functional;
 using DTTUnityCore.DataStructs;
 using DTTUnityCore;
 using System;
+using System.Collections.Generic;
+using UnityEngine.Networking.Types;
 
 namespace DTTBim.DataStructs
 {
     [Serializable]
     public class BimNodeParent : DataNodeBase, IBimParentNode<DataNodeBase, BimNodeObject>
     {
+        Dictionary<string, BimNodeObject> _idNodesObjectsDictionary;
+        Dictionary<uint, BimNodeObject> _nodeIndexObjectsDictionary;
+
+
         [SerializeField]
         private MetaDataName _metaDataName;
 
-        public BimNodeParent(string name)
-        {
-            _metaDataName = new MetaDataName(name);
-        }
-
-        public BimNodeObject this[int index] 
-        { 
-            get => (BimNodeObject)Childs[index]; 
-            set => Childs[index] = value; 
-        }
-
         public IMetaData MetaData { get => _metaDataName; set => _metaDataName = (MetaDataName)value; }
 
-        public void AddBimDataNode(string id, string parentId, uint nodeIndex, uint? parentIndex, Vector3 position, Quaternion rotation, Vector3 scale, int layer = 0, bool useLocalPostion = true)
-        {
-            if(string.IsNullOrEmpty(parentId))
+        public BimNodeObject this[string id]
+        { 
+            get
             {
-                int childNodeIndex = Childs.FindIndex(0, node => ((MetaDataBimNode)node.Data).Id == id);
-                if (childNodeIndex == -1) 
+                if (_idNodesObjectsDictionary == null) 
                 {
-                    AddNode(new BimNodeObjectBuilder(nodeIndex, id, parentIndex, position, rotation, scale, layer), Option<DataNodeBase>.None);
+                    _idNodesObjectsDictionary = new Dictionary<string, BimNodeObject>();
                 }
+                return _idNodesObjectsDictionary[id];
+            }
+            set 
+            {
+                if (_idNodesObjectsDictionary == null)
+                {
+                    _idNodesObjectsDictionary = new Dictionary<string, BimNodeObject>();
+                }
+                _idNodesObjectsDictionary[id] = value;
+            }
+        }
+
+        public BimNodeObject this[uint nodeIndex]
+        {
+            get
+            {
+                if (_nodeIndexObjectsDictionary == null)
+                {
+                    _nodeIndexObjectsDictionary = new Dictionary<uint, BimNodeObject>();
+                    return null;
+                }
+                else if(_nodeIndexObjectsDictionary.ContainsKey(nodeIndex))
+                {
+                    return _nodeIndexObjectsDictionary[nodeIndex];
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            set
+            {
+                if (_nodeIndexObjectsDictionary == null)
+                {
+                    _nodeIndexObjectsDictionary = new Dictionary<uint, BimNodeObject>();
+                }
+                _nodeIndexObjectsDictionary[nodeIndex] = value;
+            }
+        }
+
+        public void AddBimDataNodeById(string nodeId, string parentId, uint nodeIndex, uint? parentIndex, Vector3 position, Quaternion rotation, Vector3 scale, int layer = 0)
+        {
+            if(_idNodesObjectsDictionary == null) { _idNodesObjectsDictionary = new Dictionary<string, BimNodeObject>(); }
+            if(_nodeIndexObjectsDictionary == null) { _nodeIndexObjectsDictionary = new Dictionary<uint, BimNodeObject>(); }
+
+            if (string.IsNullOrEmpty(parentId))
+            {
+                _idNodesObjectsDictionary[nodeId] = (BimNodeObject)AddNode(new BimNodeObjectBuilder(nodeId, nodeIndex, parentIndex, position, rotation, scale, layer), Option<DataNodeBase>.None);
             }
             else
             {
-                BimNodeObject bimNodeObject = FindNodeObjectById<BimNodeObject>(parentId);
+                _idNodesObjectsDictionary[nodeId] = (BimNodeObject)_idNodesObjectsDictionary[parentId].AddBimDataNode(nodeId, nodeIndex, position, rotation, scale, layer);
+                _nodeIndexObjectsDictionary[nodeIndex] = _idNodesObjectsDictionary[nodeId];
+            }
+        }
 
-                if(bimNodeObject != null)
-                {
-                    bimNodeObject.AddBimDataNode(nodeIndex, id, position, rotation, scale, layer);
-                }
+        public void AddBimDataNodeByNodeIndex(uint newNodeIndex, uint? parentIndex, string nodeId, string parentId, Vector3 position, Quaternion rotation, Vector3 scale, int layer)
+        {
+            if (_idNodesObjectsDictionary == null) { _idNodesObjectsDictionary = new Dictionary<string, BimNodeObject>(); }
+            if (_nodeIndexObjectsDictionary == null) { _nodeIndexObjectsDictionary = new Dictionary<uint, BimNodeObject>(); }
+
+            if (parentIndex.HasValue)
+            {
+                _nodeIndexObjectsDictionary[newNodeIndex] = (BimNodeObject)_nodeIndexObjectsDictionary[parentIndex.Value].AddBimDataNode(nodeId, newNodeIndex, position, rotation, scale, layer);
+                _idNodesObjectsDictionary[nodeId] = _nodeIndexObjectsDictionary[newNodeIndex];
+            }
+            else
+            {
+                _nodeIndexObjectsDictionary[newNodeIndex] = (BimNodeObject)AddNode(new BimNodeObjectBuilder(nodeId, newNodeIndex, parentIndex, position, rotation, scale, layer), Option<DataNodeBase>.None);
+                _idNodesObjectsDictionary[nodeId] = _nodeIndexObjectsDictionary[newNodeIndex];
             }
         }
 
@@ -55,59 +110,87 @@ namespace DTTBim.DataStructs
             GuardsClauses.ArgumentNotNull(sharedMesh, nameof(sharedMesh));
             GuardsClauses.ArgumentNotNull(sharedMaterialsArrays, nameof(sharedMaterialsArrays));
 
-            BimNodeObject bimNodeObject = FindNodeObjectById<BimNodeObject>(id);
-            if(bimNodeObject)
+            //TODO: Resolve a empty sharedMaterialArray with a existing mesh
+
+            MeshFilter meshFilter = _idNodesObjectsDictionary[id].GetComponent<MeshFilter>();
+            if(meshFilter == null)
             {
-                //TODO: Resolve a empty sharedMaterialArray with a existing mesh
-
-                MeshFilter meshFilter = bimNodeObject.AddComponent<MeshFilter>();
-                meshFilter.sharedMesh = sharedMesh;
-
-                if (addMeshCollider)
-                {
-                    MeshCollider meshCollider = bimNodeObject.AddComponent<MeshCollider>();
-                    meshCollider.sharedMesh = sharedMesh;
-                }
-
-                _ = combineRendererBuilder.Match(some =>
-                {
-                    for(int i=0; i< sharedMaterialsArrays.Length; i++)
-                    {
-                        some.AddCombineInstance(sharedMaterialsArrays[i], sharedMesh, bimNodeObject.transform.localToWorldMatrix);
-                    }
-                    return 0;
-                },
-                () =>
-                {
-                    MeshRenderer meshRenderer = bimNodeObject.AddComponent<MeshRenderer>();
-                    meshRenderer.materials = sharedMaterialsArrays;
-                    return 0;
-                });
+                meshFilter = _idNodesObjectsDictionary[id].AddComponent<MeshFilter>();
             }
-        }
+            meshFilter.sharedMesh = sharedMesh;
 
-        public int FindChildIndexNodeByNodeId(string id)
-        {
-            return Childs.FindIndex(0, node => ((MetaDataBimNode)node.Data).Id == id);
-        }
-
-        public NodeObjectType FindNodeObjectById<NodeObjectType>(string id) where NodeObjectType : DataNodeBase
-        {
-            NodeObjectType bimNodeObject = (NodeObjectType)Childs.Find(node => ((MetaDataBimNode)node.Data).Id == id);
-
-            if(bimNodeObject == null)
+            if (addMeshCollider)
             {
-                for(int i=0; i< Childs.Count; i++)
+                MeshCollider meshCollider = _idNodesObjectsDictionary[id].GetComponent<MeshCollider>();
+                if(meshCollider == null)
                 {
-                    bimNodeObject = (NodeObjectType)Childs[i].Childs.Find(node => ((MetaDataBimNode)node.Data).Id == id);
-                    if(bimNodeObject != null)
-                    {
-                        return bimNodeObject;
-                    }
+                    meshCollider = _idNodesObjectsDictionary[id].AddComponent<MeshCollider>();
                 }
+                meshCollider.sharedMesh = sharedMesh;
             }
 
-            return bimNodeObject; 
+            _ = combineRendererBuilder.Match(some =>
+            {
+                for(int i=0; i< sharedMaterialsArrays.Length; i++)
+                {
+                    some.AddCombineInstance(sharedMaterialsArrays[i], sharedMesh, _idNodesObjectsDictionary[id].transform.localToWorldMatrix);
+                }
+                return 0;
+            },
+            () =>
+            {
+                MeshRenderer meshRenderer = _idNodesObjectsDictionary[id].GetComponent<MeshRenderer>();
+
+                if( meshRenderer == null)
+                {
+                    meshRenderer = _idNodesObjectsDictionary[id].AddComponent<MeshRenderer>();
+                }
+                meshRenderer.materials = sharedMaterialsArrays;
+                return 0;
+            });
+        }
+
+        public void AddMesh(uint nodeIndex, Mesh sharedMesh, Material[] sharedMaterialsArrays, Option<ICombineRendererBuilder> combineRendererBuilder, bool addMeshCollider = false)
+        {
+            GuardsClauses.ArgumentNotNull(sharedMesh, nameof(sharedMesh));
+            GuardsClauses.ArgumentNotNull(sharedMaterialsArrays, nameof(sharedMaterialsArrays));
+
+            MeshFilter meshFilter = _nodeIndexObjectsDictionary[nodeIndex].GetComponent<MeshFilter>();
+            if (meshFilter == null)
+            {
+                meshFilter = _nodeIndexObjectsDictionary[nodeIndex].AddComponent<MeshFilter>();
+            }
+            meshFilter.sharedMesh = sharedMesh;
+
+            if (addMeshCollider)
+            {
+                MeshCollider meshCollider = _nodeIndexObjectsDictionary[nodeIndex].GetComponent<MeshCollider>();
+                if (meshCollider == null)
+                {
+                    meshCollider = _nodeIndexObjectsDictionary[nodeIndex].AddComponent<MeshCollider>();
+                }
+                meshCollider.sharedMesh = sharedMesh;
+            }
+
+            _ = combineRendererBuilder.Match(some =>
+            {
+                for (int i = 0; i < sharedMaterialsArrays.Length; i++)
+                {
+                    some.AddCombineInstance(sharedMaterialsArrays[i], sharedMesh, _nodeIndexObjectsDictionary[nodeIndex].transform.localToWorldMatrix);
+                }
+                return 0;
+            },
+            () =>
+            {
+                MeshRenderer meshRenderer = _nodeIndexObjectsDictionary[nodeIndex].GetComponent<MeshRenderer>();
+
+                if (meshRenderer == null)
+                {
+                    meshRenderer = _nodeIndexObjectsDictionary[nodeIndex].AddComponent<MeshRenderer>();
+                }
+                meshRenderer.materials = sharedMaterialsArrays;
+                return 0;
+            });
         }
     }
 }

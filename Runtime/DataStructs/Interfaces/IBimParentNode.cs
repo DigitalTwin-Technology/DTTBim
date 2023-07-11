@@ -10,7 +10,13 @@ namespace DTTBim.DataStructs
 {
     public interface IBimParentNode<NodeType, NodeObjectType> : IMetaDataNode<NodeType, IMetaData>
     {
-        NodeObjectType this[int index]
+        NodeObjectType this[string id]
+        {
+            get;
+            set;
+        }
+
+        NodeObjectType this[uint nodeIndex]
         {
             get;
             set;
@@ -21,9 +27,14 @@ namespace DTTBim.DataStructs
             Option<ICombineRendererBuilder> combineRendererBuilder,
             bool addMeshCollider = false);
 
-        void AddBimDataNode(string id, string parentId, uint nodeIndex, uint? parentIndex, Vector3 position, Quaternion rotation, Vector3 scale, int layer, bool useLocalPostion);
+        void AddMesh(uint nodeIndex, Mesh mesh,
+            Material[] sharedMaterials,
+            Option<ICombineRendererBuilder> combineRendererBuilder,
+            bool addMeshCollider = false);
 
-        NodeObjectType_ FindNodeObjectById<NodeObjectType_>(string name) where NodeObjectType_ : NodeType;
+        void AddBimDataNodeById(string newNodeid, string parentId, uint nodeIndex, uint? parentIndex, Vector3 position, Quaternion rotation, Vector3 scale, int layer);
+
+        void AddBimDataNodeByNodeIndex(uint newNodeIndex, uint? parentIndex, string nodeid, string parentId, Vector3 position, Quaternion rotation, Vector3 scale, int layer);
     }
 }
 

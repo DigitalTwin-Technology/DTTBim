@@ -19,7 +19,10 @@ namespace DTTBim.DataStructs
 
         public IMetaDataNode<NodeType, MetaDataType> Create<NodeType, MetaDataType>(IMetaDataNode<NodeType, MetaDataType> parent) where MetaDataType : IMetaData
         {
-            return (IMetaDataNode<NodeType, MetaDataType>)(new GameObject(_metaDataName.Name)).AddComponent<BimNodeParent>();
+            BimNodeParent newBimNodeParent = new GameObject(_metaDataName.Name).AddComponent<BimNodeParent>();
+            newBimNodeParent.Header = ((DataNodeBase)parent.Node).Header;
+            newBimNodeParent.Parent = ((DataNodeBase)parent.Node);
+            return (IMetaDataNode<NodeType, MetaDataType>)newBimNodeParent;
         }
     }
 }
